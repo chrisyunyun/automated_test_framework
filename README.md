@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Pytest + Playwright 自动化测试框架
 
 简洁高效的 UI 自动化测试框架，基于 Python + Pytest + Playwright。
@@ -156,3 +157,7 @@ def test_multiple(user, pwd, page):
 ---
 
 **更多帮助**: `pytest --help`
+=======
+# automated_test_framework
+一个简单的基于python+playwright的自动化测试框架
+>>>>>>> 7825f2add9700b0d446152065800d46f52729540
