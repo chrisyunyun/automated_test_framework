@@ -1,0 +1,2 @@
+# automated_test_framework
+一个简单的基于python+playwright的自动化测试框架
