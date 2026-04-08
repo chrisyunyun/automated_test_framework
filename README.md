@@ -28,8 +28,15 @@ pytest
 # 运行冒烟测试
 pytest -m smoke
 
+#运行测试用例（部分）
+pytest test_login.py -v
+# 格式：pytest 文件名::用例函数名 -v
+pytest test_login.py::test_login_success -v
+
 # 生成 HTML 报告
 pytest --html=reports/report.html --self-contained-html
+# 录制元素
+playwright codegen https://example.com
 
 # 查看详细输出
 pytest -v -s

@@ -31,3 +31,4 @@ Thumbs.db
 
 # Reports
 reports/*.html
+tests/reports/
