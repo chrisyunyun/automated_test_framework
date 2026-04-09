@@ -31,6 +31,10 @@ class Config:
     # 录像配置（"on" 启用，其他值关闭）
     VIDEO = os.getenv("VIDEO", "off")
     
+    # 测试账号（易威行 OA）
+    OA_ACCOUNT  = os.getenv("OA_ACCOUNT", "")
+    OA_PASSWORD = os.getenv("OA_PASSWORD", "")
+
     # 报告目录
     REPORT_DIR = BASE_DIR / "reports"
     SCREENSHOT_DIR = BASE_DIR / "reports" / "screenshots"

@@ -31,8 +31,11 @@ Thumbs.db
 
 # Reports
 reports/*.html
+reports/*.txt
 tests/reports/
-reports/
+
+# WorkBuddy (AI memory/sessions)
 .workbuddy/
 
-
+# 临时探查脚本（仅本地调试用）
+scripts/

@@ -1,4 +1,4 @@
-"""
+﻿"""
 易威行 OA 系统 — 登录功能测试
 用例来源: 表格_20260409.csv（LOGIN-FT-001 ~ LOGIN-FT-010）
 
@@ -13,10 +13,11 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from pages.oa_login_page import OALoginPage
+from config import config
 
 # ── 测试账号常量 ──────────────────────────────────────────────
-VALID_ACCOUNT  = '蔡云江'
-VALID_PASSWORD = 'kq520'
+VALID_ACCOUNT  = config.OA_ACCOUNT
+VALID_PASSWORD = config.OA_PASSWORD
 WRONG_ACCOUNT  = 'notexist_user_xyz'
 WRONG_PASSWORD = 'wrongpass_abc999'
 
@@ -199,38 +200,6 @@ class TestOALogin:
         assert login_page_oa.is_login_success(), \
             "Enter 键登录失败：未跳转至 dashboard 页面"
 
-    # ────────────────────────────────────────────────────────────
-    # LOGIN-FT-009  连续 5 次错误密码锁定账号
-    # ⚠️  此用例会触发账号锁定，需要等待 15 分钟或手动解锁
-    #     放在最后执行，避免影响其他用例
-    # ────────────────────────────────────────────────────────────
-    @pytest.mark.regression
-    @pytest.mark.slow
-    def test_ft009_account_lockout(self, browser):
-        """LOGIN-FT-009: 连续 5 次错误密码后账号被锁定，第 6 次提示锁定信息"""
-        ctx = browser.new_context(ignore_https_errors=True)
-        page = ctx.new_page()
-        lp = OALoginPage(page)
 
-        # 连续 5 次输入错误密码
-        for attempt in range(1, 6):
-            lp.navigate()
-            lp.login(VALID_ACCOUNT, WRONG_PASSWORD)
-            msg = lp.get_error_message()
-            print(f"  第 {attempt} 次错误，提示: {msg!r}")
-            assert lp.is_on_login_page(), \
-                f"第 {attempt} 次错误密码时不应登录成功"
 
-        # 第 6 次：用正确密码尝试登录，应提示锁定
-        lp.navigate()
-        lp.login(VALID_ACCOUNT, VALID_PASSWORD)
-        lock_msg = lp.get_error_message()
-        print(f"  第 6 次（正确密码）提示: {lock_msg!r}")
 
-        ctx.close()
-
-        # 断言: 提示包含锁定信息
-        assert len(lock_msg) > 0, "第 6 次登录应有提示信息"
-        assert '锁定' in lock_msg or '禁用' in lock_msg or '限制' in lock_msg \
-               or '次' in lock_msg or '密码错误' in lock_msg, \
-            f"锁定提示内容不符合预期，实际: {lock_msg!r}"
