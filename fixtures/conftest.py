@@ -13,8 +13,23 @@ import pytest
 from playwright.sync_api import sync_playwright, Page, Browser, BrowserContext
 # 导入配置模块，获取全局配置
 from config import config
-# 导入页面类，用于创建页面对象
-from pages.login_page import LoginPage, HomePage
+
+
+# ============================================
+# 覆盖 pytest-playwright 插件的 context 参数
+# 确保所有测试忽略 HTTPS 证书错误（内网自签名证书场景）
+# ============================================
+
+@pytest.fixture(scope="session")
+def browser_context_args(browser_context_args):
+    return {
+        **browser_context_args,
+        "ignore_https_errors": True,
+        "viewport": {
+            "width": config.VIEWPORT_WIDTH,
+            "height": config.VIEWPORT_HEIGHT,
+        },
+    }
 
 
 # ============================================
@@ -127,69 +142,4 @@ def page(context: BrowserContext) -> Page:
     page.close()
 
 
-# ============================================
-# Fixture 4: login_page (登录页面对象)
-# 作用域：function (每个测试函数创建一个新的页面对象)
-# ============================================
 
-@pytest.fixture(scope="function")
-def login_page(page: Page) -> LoginPage:
-    """
-    创建登录页面对象（函数级 fixture）
-    方便测试用例直接使用 LoginPage 类的方法
-    :param page: 注入的 page fixture
-    :return: LoginPage 对象实例
-    """
-    # 实例化 LoginPage 类
-    # 将 Playwright 的 page 对象传入，LoginPage 继承的 BasePage 会使用它
-    return LoginPage(page)
-
-
-# ============================================
-# Fixture 5: home_page (首页页面对象)
-# 作用域：function (每个测试函数创建一个新的页面对象)
-# ============================================
-
-@pytest.fixture(scope="function")
-def home_page(page: Page) -> HomePage:
-    """
-    创建首页页面对象（函数级 fixture）
-    方便测试用例直接使用 HomePage 类的方法
-    :param page: 注入的 page fixture
-    :return: HomePage 对象实例
-    """
-    # 实例化 HomePage 类
-    return HomePage(page)
-
-
-# ============================================
-# Fixture 6: authenticated_page (已认证页面)
-# 作用域：function (每个测试函数自动登录)
-# ============================================
-
-@pytest.fixture(scope="function")
-def authenticated_page(page: Page, login_page: LoginPage):
-    """
-    创建已认证的页面（自动登录 fixture）
-    用于需要登录状态才能执行的测试
-    :param page: 注入的 page fixture
-    :param login_page: 注入的 login_page fixture
-    :return: 登录后的 page 对象
-    """
-    # 步骤 1: 导航到登录页面
-    login_page.navigate()
-    
-    # 步骤 2: 执行登录操作
-    # 使用测试账号进行登录
-    # 注意：实际使用时应从配置文件或环境变量读取测试账号
-    login_page.login("testuser", "testpass123")
-    
-    # 步骤 3: 等待登录成功后跳转到首页
-    # "**/home" 是通配符模式，匹配任何以 /home 结尾的 URL
-    page.wait_for_url("**/home")
-    
-    # 将已登录的 page 对象提供给测试用例使用
-    yield page
-    
-    # 注意：这里没有显式的清理代码
-    # 因为 page 和 login_page fixture 会在它们自己的作用域结束时自动清理

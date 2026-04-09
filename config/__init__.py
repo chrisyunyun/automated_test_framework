@@ -27,6 +27,9 @@ class Config:
     BROWSER = os.getenv("BROWSER", "chromium")
     VIEWPORT_WIDTH = int(os.getenv("VIEWPORT_WIDTH", "1920"))
     VIEWPORT_HEIGHT = int(os.getenv("VIEWPORT_HEIGHT", "1080"))
+
+    # 录像配置（"on" 启用，其他值关闭）
+    VIDEO = os.getenv("VIDEO", "off")
     
     # 报告目录
     REPORT_DIR = BASE_DIR / "reports"
