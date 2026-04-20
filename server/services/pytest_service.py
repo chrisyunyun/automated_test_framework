@@ -172,95 +172,6 @@ class PytestService:
 
         return docstring_map
 
-    async def execute_cases(
-        self,
-        case_ids: List[str],
-        execution_id: str,
-        sse_queue: asyncio.Queue
-    ):
-        """执行选定的测试用例，实时推送日志到 SSE"""
-        start_time = datetime.now()
-
-        if not case_ids:
-            await sse_queue.put("data: {\"error\": \"No cases selected\"}\n\n")
-            return
-
-        await sse_queue.put(f"data: {json.dumps({'type': 'start', 'message': f'Starting {len(case_ids)} test cases...'})}\n\n")
-
-        cmd = [
-            "pytest",
-            "--tb=short",
-            "-v",
-            "--capture=no",
-            "-p", "no:warnings",
-        ]
-
-        report_name = datetime.now().strftime("%Y%m%d_%H%M%S") + ".html"
-        cmd.extend(["--html=reports/" + report_name, "--self-contained-html"])
-
-        def extract_name(case_id):
-            return case_id.split("::")[-1]
-
-        if len(case_ids) > 0:
-            case_names = [extract_name(cid) for cid in case_ids]
-            if len(case_names) == 1:
-                cmd.extend(["-k", case_names[0]])
-            else:
-                case_str = " or ".join(case_names)
-                cmd.extend(["-k", case_str])
-
-        cmd_str = " ".join(cmd)
-        print(f"[DEBUG] Executing command: {cmd_str}")
-
-        try:
-            process = await asyncio.create_subprocess_shell(
-                cmd_str,
-                cwd=str(BASE_DIR),
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
-                env = {**os.environ, "PYTHONUNBUFFERED": "1", "HEADLESS": "false" if not headless else "true"}
-            )
-
-            self._running_executions[execution_id] = process
-
-            stdout, _ = await process.communicate()
-            log_output = stdout.decode("utf-8", errors="replace")
-
-            for decoded_line in log_output.splitlines():
-                line = decoded_line.strip()
-                if line:
-                    await sse_queue.put(f"data: {json.dumps({'type': 'log', 'content': line})}\n\n")
-
-            duration = (datetime.now() - start_time).total_seconds()
-
-            log_lines = log_output.splitlines()
-            passed = sum(1 for l in log_lines if "PASSED" in l)
-            failed = sum(1 for l in log_lines if "FAILED" in l)
-            skipped = sum(1 for l in log_lines if "SKIPPED" in l)
-
-            final_status = "passed" if failed == 0 else "failed" if failed > 0 else "unknown"
-
-            result = ExecutionResult(
-                execution_id=execution_id,
-                status=final_status,
-                passed=passed,
-                failed=failed,
-                skipped=skipped,
-                duration=duration,
-                log=log_output,
-                timestamp=datetime.now().isoformat()
-            )
-
-            await sse_queue.put(f"data: {json.dumps({'type': 'result', **asdict(result)})}\n\n")
-            await sse_queue.put("data: [DONE]\n\n")
-
-        except Exception as e:
-            await sse_queue.put(f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n")
-
-        finally:
-            if execution_id in self._running_executions:
-                del self._running_executions[execution_id]
-
     async def execute_cases_sync(self, case_ids: List[str], execution_id: str, headless: bool = True) -> ExecutionResult:
         """同步执行测试用例，等待完成返回结果（不推送 SSE）"""
         start_time = datetime.now()
@@ -300,7 +211,6 @@ class PytestService:
                 cmd.extend(["-k", case_str])
 
         cmd_str = " ".join(cmd)
-        print(f"[DEBUG SYNC] Executing command: {cmd_str}")
 
         try:
             result = subprocess.run(
@@ -316,9 +226,24 @@ class PytestService:
             duration = (datetime.now() - start_time).total_seconds()
 
             log_lines = log_output.splitlines()
-            passed = sum(1 for l in log_lines if "PASSED" in l)
-            failed = sum(1 for l in log_lines if "FAILED" in l)
-            skipped = sum(1 for l in log_lines if "SKIPPED" in l)
+            
+            passed = 0
+            failed = 0
+            skipped = 0
+            
+            import re
+            for line in log_lines:
+                if "deselected" in line and ("passed" in line or "failed" in line or "skipped" in line):
+                    match_passed = re.search(r'(\d+) passed', line)
+                    if match_passed:
+                        passed = int(match_passed.group(1))
+                    match_failed = re.search(r'(\d+) failed', line)
+                    if match_failed:
+                        failed = int(match_failed.group(1))
+                    match_skipped = re.search(r'(\d+) skipped', line)
+                    if match_skipped:
+                        skipped = int(match_skipped.group(1))
+                    break
 
             case_ids_str = ",".join(case_ids)
 
