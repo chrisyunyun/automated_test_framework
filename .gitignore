@@ -36,6 +36,7 @@ web/dist/
 # Reports
 reports/*.html
 reports/*.txt
+reports/execution_history.json
 tests/reports/
 
 # WorkBuddy (AI memory/sessions)

@@ -49,6 +49,27 @@ class PytestService:
     def __init__(self):
         self._running_executions: Dict[str, asyncio.subprocess.Process] = {}
         self._execution_history: List[ExecutionResult] = []
+        self._history_file = BASE_DIR / "reports" / "execution_history.json"
+        self._load_history()
+
+    def _load_history(self):
+        """从文件加载历史记录"""
+        if self._history_file.exists():
+            try:
+                with open(self._history_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    self._execution_history = [ExecutionResult(**item) for item in data]
+            except Exception:
+                self._execution_history = []
+
+    def _save_history(self):
+        """保存历史记录到文件"""
+        try:
+            self._history_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(self._history_file, "w", encoding="utf-8") as f:
+                json.dump([asdict(r) for r in self._execution_history], f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
 
     def collect_cases(self) -> List[TestCase]:
         """收集所有测试用例"""
@@ -180,11 +201,13 @@ class PytestService:
         def extract_name(case_id):
             return case_id.split("::")[-1]
 
-        if len(case_ids) == 1:
-            cmd.extend(["-k", extract_name(case_ids[0])])
-        elif len(case_ids) > 1:
-            case_str = " or ".join(extract_name(cid) for cid in case_ids)
-            cmd.extend(["-k", case_str])
+        if len(case_ids) > 0:
+            case_names = [extract_name(cid) for cid in case_ids]
+            if len(case_names) == 1:
+                cmd.extend(["-k", case_names[0]])
+            else:
+                case_str = " or ".join(case_names)
+                cmd.extend(["-k", case_str])
 
         cmd_str = " ".join(cmd)
 
@@ -312,6 +335,7 @@ class PytestService:
             self._execution_history.insert(0, result)
             if len(self._execution_history) > 50:
                 self._execution_history = self._execution_history[:50]
+            self._save_history()
 
             return result
 
@@ -328,6 +352,7 @@ class PytestService:
                 case_ids=",".join(case_ids)
             )
             self._execution_history.insert(0, result)
+            self._save_history()
             return result
 
     def get_execution_history(self) -> List[ExecutionResult]:
