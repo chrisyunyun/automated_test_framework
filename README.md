@@ -1,6 +1,8 @@
 <<<<<<< HEAD
 # Pytest + Playwright 自动化测试框架
+## 📷 前端首页
 
+![首页截图](./docs/images/homepage.png)
 简洁高效的 UI 自动化测试框架，基于 Python + Pytest + Playwright。
 
 ## 🚀 快速开始

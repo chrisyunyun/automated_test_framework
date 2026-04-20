@@ -271,20 +271,23 @@ onMounted(() => {
             <button
               @click="stopTests"
               :disabled="!isRunning"
-              :class="isRunning ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-400 cursor-not-allowed' + ' px-6 py-2 rounded-lg font-medium transition'"
+              :class="[
+                'px-6 py-2 rounded-lg font-medium transition',
+                isRunning ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-400 cursor-not-allowed'
+              ]"
             >
               停止
             </button>
             <button
               @click="runTests"
               :disabled="isRunning || selectedCases.length === 0"
-              :class="(isRunning || selectedCases.length === 0) ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700' + ' px-6 py-2 rounded-lg font-medium transition flex items-center gap-2'"
+              :class="[
+                'px-6 py-2 rounded-lg font-medium transition flex items-center gap-1',
+                (isRunning || selectedCases.length === 0) ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+              ]"
             >
-              <svg v-if="isRunning" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              {{ isRunning ? '执行中...' : '运行测试' }}
+              <span v-if="isRunning" class="animate-pulse">执行中</span>
+              <span v-else>运行测试</span>
             </button>
           </div>
         </div>
