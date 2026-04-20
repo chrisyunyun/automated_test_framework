@@ -29,6 +29,9 @@ allure-results/
 .DS_Store
 Thumbs.db
 
+# Node
+node_modules/
+
 # Reports
 reports/*.html
 reports/*.txt
