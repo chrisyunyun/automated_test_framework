@@ -194,7 +194,7 @@ const stopTests = async () => {
 }
 
 const formatTime = (timestamp) => {
-  return new Date(timestamp).toLocaleTimeString()
+  return new Date(timestamp).toLocaleString()
 }
 
 onMounted(() => {
