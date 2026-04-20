@@ -19,7 +19,6 @@ const stats = ref({ passed: 0, failed: 0, skipped: 0, duration: 0 })
 const history = ref([])
 const selectedHistory = ref(null)
 const generateReport = ref(false)
-const headless = ref(true)
 
 const modules = computed(() => {
   const mods = [...new Set(cases.value.map(c => c.module))]
@@ -148,7 +147,7 @@ const runTests = async () => {
 
   try {
     const res = await axios.post('/api/execute', null, {
-      params: { case_ids: selectedCases.value.join(','), headless: headless.value }
+      params: { case_ids: selectedCases.value.join(',') }
     })
 
     logs.value = []
@@ -264,10 +263,6 @@ onMounted(() => {
 
         <div :class="'mt-4 pt-4 ' + theme.header + ' flex items-center justify-between border-t'">
           <div class="flex items-center gap-4">
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" v-model="headless" class="w-4 h-4 rounded border-gray-400 text-blue-500">
-              <span :class="'text-sm ' + theme.text">无头模式(隐藏浏览器)</span>
-            </label>
             <span :class="'text-sm ' + theme.textMuted">
               已选择: <span :class="theme.text + ' font-medium'">{{ selectedCases.length }}</span> / {{ filteredCases.length }} 个用例
             </span>
