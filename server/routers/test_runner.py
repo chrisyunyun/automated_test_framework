@@ -1,15 +1,35 @@
 """
 测试运行器路由
-提供用例列表、批量执行、SSE 日志流接口
+提供用例列表、批量执行、历史记录接口
 """
-import asyncio
 import uuid
 from typing import List
 from fastapi import APIRouter, Query
-from fastapi.responses import StreamingResponse
-from server.services.pytest_service import pytest_service, TestCase
+from pydantic import BaseModel
+from server.services.pytest_service import pytest_service, TestCase, ExecutionResult
 
 router = APIRouter()
+
+
+class ExecuteResponse(BaseModel):
+    execution_id: str
+    status: str
+    passed: int
+    failed: int
+    skipped: int
+    duration: float
+    log: str
+
+
+class HistoryItem(BaseModel):
+    execution_id: str
+    status: str
+    passed: int
+    failed: int
+    skipped: int
+    duration: float
+    case_ids: str
+    timestamp: str
 
 
 @router.get("/cases", response_model=List[TestCase])
@@ -18,40 +38,39 @@ async def get_cases():
     return pytest_service.collect_cases()
 
 
-@router.post("/execute")
-async def execute_cases(case_ids: List[str] = Query(...)):
-    """发起测试执行，返回执行 ID"""
+@router.post("/execute", response_model=ExecuteResponse)
+async def execute_cases(case_ids: List[str] = Query(...), generate_report: bool = Query(False), headless: bool = Query(True)):
+    """执行测试用例，等待完成返回结果"""
     execution_id = str(uuid.uuid4())
-    return {"execution_id": execution_id}
-
-
-@router.get("/execute/{execution_id}/stream")
-async def stream_execution(execution_id: str, case_ids: str = Query(...)):
-    """SSE 流式返回执行日志"""
-    case_id_list = case_ids.split(",")
-
-    queue = asyncio.Queue()
-
-    asyncio.create_task(pytest_service.execute_cases(case_id_list, execution_id, queue))
-
-    async def event_generator():
-        while True:
-            data = await queue.get()
-            if data == "data: [DONE]\n\n":
-                break
-            yield data
-            if "[DONE]" in data:
-                break
-
-    return StreamingResponse(
-        event_generator(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",
-        }
+    result = await pytest_service.execute_cases_sync(case_ids, execution_id, generate_report=generate_report, headless=headless)
+    return ExecuteResponse(
+        execution_id=execution_id,
+        status=result.status,
+        passed=result.passed,
+        failed=result.failed,
+        skipped=result.skipped,
+        duration=result.duration,
+        log=result.log
     )
+
+
+@router.get("/history", response_model=List[HistoryItem])
+async def get_history():
+    """获取执行历史记录"""
+    history = pytest_service.get_execution_history()
+    return [
+        HistoryItem(
+            execution_id=h.execution_id,
+            status=h.status,
+            passed=h.passed,
+            failed=h.failed,
+            skipped=h.skipped,
+            duration=h.duration,
+            case_ids=h.case_ids,
+            timestamp=h.timestamp
+        )
+        for h in history
+    ]
 
 
 @router.delete("/execute/{execution_id}")
