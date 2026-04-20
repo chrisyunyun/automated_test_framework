@@ -21,7 +21,7 @@ watch(isDark, (val) => {
     <header class="flex items-center justify-between mb-8">
       <div>
         <h1 class="text-3xl font-bold">Pytest Runner</h1>
-        <p :class="isDark ? 'text-gray-400' : 'text-gray-600'" class="mt-1">易威行 OA 自动化测试执行平台</p>
+        <p :class="isDark ? 'text-gray-400' : 'text-gray-600'" class="mt-1">cyj 自动化测试执行平台</p>
       </div>
       <button
         @click="isDark = !isDark"
