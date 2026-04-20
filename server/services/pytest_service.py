@@ -210,6 +210,7 @@ class PytestService:
                 cmd.extend(["-k", case_str])
 
         cmd_str = " ".join(cmd)
+        print(f"[DEBUG] Executing command: {cmd_str}")
 
         try:
             process = await asyncio.create_subprocess_shell(
@@ -290,18 +291,21 @@ class PytestService:
         def extract_name(case_id):
             return case_id.split("::")[-1]
 
-        if len(case_ids) == 1:
-            cmd.extend(["-k", extract_name(case_ids[0])])
-        elif len(case_ids) > 1:
-            case_str = " or ".join(extract_name(cid) for cid in case_ids)
-            cmd.extend(["-k", case_str])
+        if len(case_ids) > 0:
+            case_names = [extract_name(cid) for cid in case_ids]
+            if len(case_names) == 1:
+                cmd.extend(["-k", case_names[0]])
+            else:
+                case_str = " or ".join(case_names)
+                cmd.extend(["-k", case_str])
 
         cmd_str = " ".join(cmd)
+        print(f"[DEBUG SYNC] Executing command: {cmd_str}")
 
         try:
             result = subprocess.run(
-                cmd_str,
-                shell=True,
+                cmd,
+                shell=False,
                 cwd=str(BASE_DIR),
                 capture_output=True,
                 text=True,
