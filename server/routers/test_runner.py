@@ -39,10 +39,10 @@ async def get_cases():
 
 
 @router.post("/execute", response_model=ExecuteResponse)
-async def execute_cases(case_ids: List[str] = Query(...), generate_report: bool = Query(False), headless: bool = Query(True)):
+async def execute_cases(case_ids: List[str] = Query(...), headless: bool = Query(True)):
     """执行测试用例，等待完成返回结果"""
     execution_id = str(uuid.uuid4())
-    result = await pytest_service.execute_cases_sync(case_ids, execution_id, generate_report=generate_report, headless=headless)
+    result = await pytest_service.execute_cases_sync(case_ids, execution_id, headless=headless)
     return ExecuteResponse(
         execution_id=execution_id,
         status=result.status,

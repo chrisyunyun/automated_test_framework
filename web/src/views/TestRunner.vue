@@ -148,7 +148,7 @@ const runTests = async () => {
 
   try {
     const res = await axios.post('/api/execute', null, {
-      params: { case_ids: selectedCases.value.join(','), generate_report: generateReport.value, headless: headless.value }
+      params: { case_ids: selectedCases.value.join(','), headless: headless.value }
     })
 
     logs.value = []
@@ -264,10 +264,6 @@ onMounted(() => {
 
         <div :class="'mt-4 pt-4 ' + theme.header + ' flex items-center justify-between border-t'">
           <div class="flex items-center gap-4">
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" v-model="generateReport" class="w-4 h-4 rounded border-gray-400 text-blue-500">
-              <span :class="'text-sm ' + theme.text">生成报告</span>
-            </label>
             <label class="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" v-model="headless" class="w-4 h-4 rounded border-gray-400 text-blue-500">
               <span :class="'text-sm ' + theme.text">无头模式(隐藏浏览器)</span>

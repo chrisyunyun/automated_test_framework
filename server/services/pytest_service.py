@@ -174,8 +174,8 @@ class PytestService:
             "-p", "no:warnings",
         ]
 
-        if generate_report:
-            cmd.extend(["--html=report.html", "--self-contained-html"])
+        report_name = datetime.now().strftime("%Y%m%d_%H%M%S") + ".html"
+        cmd.extend(["--html=reports/" + report_name, "--self-contained-html"])
 
         def extract_name(case_id):
             return case_id.split("::")[-1]
@@ -237,7 +237,7 @@ class PytestService:
             if execution_id in self._running_executions:
                 del self._running_executions[execution_id]
 
-    async def execute_cases_sync(self, case_ids: List[str], execution_id: str, generate_report: bool = False, headless: bool = True) -> ExecutionResult:
+    async def execute_cases_sync(self, case_ids: List[str], execution_id: str, headless: bool = True) -> ExecutionResult:
         """同步执行测试用例，等待完成返回结果（不推送 SSE）"""
         start_time = datetime.now()
 
@@ -261,8 +261,8 @@ class PytestService:
             "-p", "no:warnings",
         ]
 
-        if generate_report:
-            cmd.extend(["--html=report.html", "--self-contained-html"])
+        report_name = datetime.now().strftime("%Y%m%d_%H%M%S") + ".html"
+        cmd.extend(["--html=reports/" + report_name, "--self-contained-html"])
 
         def extract_name(case_id):
             return case_id.split("::")[-1]
