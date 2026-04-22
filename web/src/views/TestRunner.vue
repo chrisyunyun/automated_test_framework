@@ -188,6 +188,69 @@ const runTests = async () => {
   }
 }
 
+const rerunHistory = async (item, event) => {
+  event.stopPropagation()
+  
+  const caseIds = item.case_ids.split(',').filter(id => id.trim())
+  if (caseIds.length === 0) {
+    logs.value.push({ type: 'error', content: '该历史记录没有可用的测试用例' })
+    return
+  }
+
+  isRunning.value = true
+  logs.value = []
+  stats.value = { passed: 0, failed: 0, skipped: 0, duration: 0 }
+  selectedHistory.value = null
+
+  const logLines = []
+  logLines.push({ type: 'info', content: `========== 重新执行历史批次 #${item.execution_id.slice(0, 8)} ==========` })
+  logLines.push({ type: 'info', content: `开始执行 ${caseIds.length} 个用例...` })
+  logLines.push({ type: 'info', content: '执行中，请稍候...' })
+  logs.value = logLines
+
+  try {
+    const res = await axios.post('/api/execute', null, {
+      params: { case_ids: caseIds.join(',') }
+    })
+
+    logs.value = []
+    logs.value.push({ type: 'info', content: '========== 执行结果 ==========' })
+    logs.value.push({ type: 'info', content: `通过: ${res.data.passed}` })
+    logs.value.push({ type: 'info', content: `失败: ${res.data.failed}` })
+    logs.value.push({ type: 'info', content: `跳过: ${res.data.skipped}` })
+    logs.value.push({ type: 'info', content: `耗时: ${res.data.duration.toFixed(2)}s` })
+    logs.value.push({ type: 'info', content: `状态: ${res.data.status}` })
+    logs.value.push({ type: 'info', content: '================================' })
+
+    if (res.data.log) {
+      logs.value.push({ type: 'info', content: '' })
+      logs.value.push({ type: 'info', content: '--- 日志输出 ---' })
+      const logContent = res.data.log.split('\n').slice(-30)
+      for (const line of logContent) {
+        if (line.trim()) {
+          const type = line.includes('PASSED') ? 'pass' :
+                       line.includes('FAILED') ? 'fail' :
+                       line.includes('SKIPPED') ? 'skip' : 'info'
+          logs.value.push({ type, content: line })
+        }
+      }
+    }
+
+    stats.value = {
+      passed: res.data.passed,
+      failed: res.data.failed,
+      skipped: res.data.skipped,
+      duration: res.data.duration
+    }
+
+    fetchHistory()
+  } catch (err) {
+    logs.value.push({ type: 'error', content: `执行失败: ${err.message}` })
+  } finally {
+    isRunning.value = false
+  }
+}
+
 const stopTests = async () => {
   logs.value.push({ type: 'warn', content: '停止执行...' })
   isRunning.value = false
@@ -358,14 +421,26 @@ onMounted(() => {
           >
             <div class="flex items-center justify-between mb-1">
               <span :class="'text-xs ' + theme.textMuted">{{ formatTime(item.timestamp) }}</span>
-              <span :class="[
-                'text-xs px-2 py-0.5 rounded-full',
-                item.status === 'passed' ? 'bg-green-600/30 text-green-400' :
-                item.status === 'failed' ? 'bg-red-600/30 text-red-400' :
-                'bg-gray-600/30 text-gray-400'
-              ]">
-                {{ item.status }}
-              </span>
+              <div class="flex items-center gap-2">
+                <span :class="[
+                  'text-xs px-2 py-0.5 rounded-full',
+                  item.status === 'passed' ? 'bg-green-600/30 text-green-400' :
+                  item.status === 'failed' ? 'bg-red-600/30 text-red-400' :
+                  'bg-gray-600/30 text-gray-400'
+                ]">
+                  {{ item.status }}
+                </span>
+                <button
+                  @click="rerunHistory(item, $event)"
+                  :disabled="isRunning"
+                  :class="[
+                    'text-xs px-2 py-0.5 rounded-full transition',
+                    isRunning ? 'bg-gray-600/30 text-gray-500 cursor-not-allowed' : 'bg-blue-600/30 text-blue-400 hover:bg-blue-600/50'
+                  ]"
+                >
+                  重新执行
+                </button>
+              </div>
             </div>
             <div :class="'text-sm ' + theme.text">
               <span class="text-green-400">{{ item.passed }}</span>
