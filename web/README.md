@@ -20,5 +20,7 @@ npm run dev
 ## 构建
 
 ```bash
+cd web
+npm install
 npm run build
 ```
